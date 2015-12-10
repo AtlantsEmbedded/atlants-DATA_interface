@@ -1,8 +1,8 @@
 /**
  * @file xml.c
  * @author (1st) Ron Brash (ron.brash@gmail.com)
- *         Rev. Frederic Simard (fred.simard@atlantsembedded.com)
- * 		   Atlants Embedded, 2015
+ *         Rev. Frederic Simard (frederic.simard.1@outlook.com)
+ * 		   For Atlants Embedded
  * @brief Contains all xml configuration options
  */
 #include <stdio.h>
@@ -149,7 +149,7 @@ static int get_app_attributes(ezxml_t app_attribute, appconfig_t * app_info)
 		printf("appAttributes->shm_key is missing\n");
 		return (-1);
 	}
-	app_info->shm_key = atoi(tmp->txt);
+	app_info->shm_key = (uint16_t) atoi(tmp->txt);
 	
 	
 	/*Get appAttributes/sem_key*/
@@ -158,7 +158,7 @@ static int get_app_attributes(ezxml_t app_attribute, appconfig_t * app_info)
 		printf("appAttributes->sem_key is missing\n");
 		return (-1);
 	}
-	app_info->sem_key = atoi(tmp->txt);
+	app_info->sem_key = (uint16_t) atoi(tmp->txt);
 	
 	
 	/*Get appAttributes/nb_data_channels*/
@@ -177,6 +177,8 @@ static int get_app_attributes(ezxml_t app_attribute, appconfig_t * app_info)
 		return (-1);
 	}
 	app_info->window_size = (uint16_t) atoi(tmp->txt);
+	
+	
 	
 	/*Get appAttributes/nb_pages*/
 	tmp = ezxml_child(app_attribute, "nb_pages");
@@ -225,6 +227,8 @@ static int get_app_attributes(ezxml_t app_attribute, appconfig_t * app_info)
 		return (-1);
 	}
 
+	printf("%s\n",tmp->txt);
+
 	/*Interpret value*/
 	if (strncmp((const char *)tmp->txt, "CSV", 3) == 0) {
 		app_info->output_format = CSV_OUTPUT;
@@ -264,6 +268,7 @@ static int XML_exists(char *file)
 	fp = NULL;
 
 	return (0);
+
 }
 
 /**
@@ -288,11 +293,12 @@ static int sanity_check_app_attributes(ezxml_t app_attribute)
 	}
 
 	return (0);
+
 }
 
 /**
  * parse_menu_XML(char *file, app_info_s * app_info)
- * @brief parse the XML menu and confirm tags are present
+ * @brief
  * @param file
  * @param app_info
  * @return < 0 for error, 0 for success

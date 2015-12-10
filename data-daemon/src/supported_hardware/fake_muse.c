@@ -20,11 +20,13 @@
 #include "xml.h"
 #include "data_output.h"
 
+static int seconds = 0;
+
 /**
  * fake_muse_init_hardware()
  * @brief Initializes muse hardware related variables
  */
-int fake_muse_connect_dev(void *param __attribute__ ((unused)))
+int fake_muse_connect_dev(void *param)
 {
 	return 0x00;
 }
@@ -51,21 +53,24 @@ int fake_muse_init_hardware(void *param __attribute__ ((unused)))
  * fake_muse_translate_pkt
  * @brief translate MUSE packet
  */
-int fake_muse_translate_pkt(void *packet,void *output)
+int fake_muse_translate_pkt(void *param)
 {
 	int i,j;
 	int delta_offset;
-	muse_translt_pkt_t *muse_trslt_pkt_ptr = (muse_translt_pkt_t *) packet;
-	output_interface_array_t *output_intrface_array = (output_interface_array_t *) output;
+	muse_translt_pkt_t *muse_trslt_pkt_ptr = (muse_translt_pkt_t *) param;
 	
 	/*new samples might be relative to last sample, we keep the current*/
 	/*eeg data in a persistent output, until it's being replaced.*/
-	static float cur_eeg_values[MUSE_NB_CHANNELS];
+	static int cur_eeg_values[MUSE_NB_CHANNELS];
 	
 	data_t data_struct;
+	data_struct.type = INT32;
 	data_struct.nb_data = MUSE_NB_CHANNELS;
-	data_struct.ptr = cur_eeg_values;
+	data_struct.ptr = (unsigned char*)cur_eeg_values;
 	
+	
+	printf("check translate pkt\n");
+
 	/*Check the type of eeg samples we are receiving*/
 	switch(muse_trslt_pkt_ptr->type){
 	
@@ -77,11 +82,8 @@ int fake_muse_translate_pkt(void *packet,void *output)
 			}
 					
 			/*Push the new sample in the output*/
-			for(i=0;i<output_intrface_array->nb_output;i++){
-					/*Push the new sample in the output*/
-					COPY_DATA_IN(output_intrface_array->output_interface[i], &data_struct);
-			}
-				
+			COPY_DATA_IN(&data_struct);
+			
 			break;
 
 		case MUSE_COMPRESSED_PKT:
@@ -97,15 +99,11 @@ int fake_muse_translate_pkt(void *packet,void *output)
 				}
 				
 				/*Push the new sample in the output*/
-				for(j=0;j<output_intrface_array->nb_output;j++){
-					/*Push the new sample in the output*/
-					COPY_DATA_IN(output_intrface_array->output_interface[j], &data_struct);
-				}
+				COPY_DATA_IN(&data_struct);
+				
 			}
 			break;
-	
-		default:
-			break;
+		
 	}
 	
 	return 0x00;
@@ -118,10 +116,10 @@ int fake_muse_translate_pkt(void *packet,void *output)
  */
 int fake_muse_send_keep_alive_pkt(void *param __attribute__ ((unused)))
 {
-	int status = 0;
+	int status;
 
 	do {
-		sleep(10000);
+		sleep(seconds);
 	} while (status > 0);
 
 	return (0);
@@ -133,8 +131,9 @@ int fake_muse_send_keep_alive_pkt(void *param __attribute__ ((unused)))
  * time-out period.
  * @param param
  */
-int fake_muse_send_pkt(void *param __attribute__ ((unused)))
+int fake_muse_send_pkt(void *param)
 {
+	param_t *param_ptr = (param_t *) param;
 	int status = 0;
 
 	if (status < 0) {
@@ -148,9 +147,11 @@ int fake_muse_send_pkt(void *param __attribute__ ((unused)))
  * @brief Processes the packet
  * @param param
  */
-int fake_muse_process_pkt(void *packet __attribute__ ((unused)),void *output)
+int fake_muse_process_pkt(void *param)
 {
 	int i=0;
+	
+	printf("check process pkt\n");
 	
 	/*This buffer will temporaly keep the decoded eeg data, 
 	  while it is being translated and put in a permanent
@@ -164,12 +165,12 @@ int fake_muse_process_pkt(void *packet __attribute__ ((unused)),void *output)
 	
 	/*fill with random values*/
 	for(i=0;i<MUSE_NB_CHANNELS;i++){
-		eeg_data_buffer[i] = rand();
-		//eeg_data_buffer[i] = i;
+		//eeg_data_buffer[i] = rand();
+		eeg_data_buffer[i] = i;
 	}
 	
 	/*one packet*/
-	TRANS_PKT_FC(&param_translate_pkt,output);
+	TRANS_PKT_FC(&param_translate_pkt);
 
 	return (0);
 }
@@ -178,19 +179,20 @@ int fake_muse_process_pkt(void *packet __attribute__ ((unused)),void *output)
  * fake_muse_read_pkt()
  * @brief Reads incoming packets from the socket
  */
-int fake_muse_read_pkt(void *output)
+int fake_muse_read_pkt(void *param __attribute__ ((ubufnused)))
 {
     struct timespec interpacket_time;
     
     interpacket_time.tv_sec = 0;
-    interpacket_time.tv_nsec = 10000000; /*sleep for 10 milliseconds*/
+    interpacket_time.tv_nsec = 10000000; /*sleep for 4 milliseconds*/
 	
 	do {
 
 		nanosleep(&interpacket_time,NULL);
+		printf("check read pkt %i\n",rand());
 		
 		/*call for packet processing*/
-		PROCESS_PKT_FC(NULL,output);
+		PROCESS_PKT_FC(NULL);
 
 	} while (1);
 	return (0);

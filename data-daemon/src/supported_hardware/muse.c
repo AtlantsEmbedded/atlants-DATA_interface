@@ -62,21 +62,20 @@ int muse_init_hardware(void *param __attribute__ ((unused)))
  * muse_translate_pkt
  * @brief translate MUSE packet
  */
-int muse_translate_pkt(void *packet, void* output)
+int muse_translate_pkt(void *param)
 {
 	int i,j;
 	int delta_offset;
-	muse_translt_pkt_t *muse_trslt_pkt_ptr = (muse_translt_pkt_t *) packet;
-
-	output_interface_array_t *output_intrface_array = (output_interface_array_t *) output;
-		
+	muse_translt_pkt_t *muse_trslt_pkt_ptr = (muse_translt_pkt_t *) param;
+	
 	/*new samples might be relative to last sample, we keep the current*/
 	/*eeg data in a persistent output, until it's being replaced.*/
-	static float cur_eeg_values[MUSE_NB_CHANNELS];
+	static int cur_eeg_values[MUSE_NB_CHANNELS];
 	
 	data_t data_struct;
+	data_struct.type = INT32;
 	data_struct.nb_data = MUSE_NB_CHANNELS;
-	data_struct.ptr = cur_eeg_values;
+	data_struct.ptr = (unsigned char*)cur_eeg_values;
 
 	/*Check the type of eeg samples we are receiving*/
 	switch(muse_trslt_pkt_ptr->type){
@@ -85,15 +84,11 @@ int muse_translate_pkt(void *packet, void* output)
 			/*It's an uncompressed packet, we just received the actual eeg values*/
 			/*do nothing, the data is good*/
 			for(i=0;i<MUSE_NB_CHANNELS;i++){
-				/*convert to uV float values*/
-				/*10bits encoding -> Range: 0.0 - 1682.0 in microvolts*/
-				cur_eeg_values[i] = (float)muse_trslt_pkt_ptr->eeg_data[i]/1023*1682;
+				cur_eeg_values[i] = muse_trslt_pkt_ptr->eeg_data[i];
 			}
-				
-			for(i=0;i<output_intrface_array->nb_output;i++){
-				/*Push the new sample in the output*/
-				COPY_DATA_IN(output_intrface_array->output_interface[i], &data_struct);
-			}
+					
+			/*Push the new sample in the output*/
+			COPY_DATA_IN(&data_struct);
 			
 			break;
 
@@ -106,15 +101,11 @@ int muse_translate_pkt(void *packet, void* output)
 				
 				/*compute the new value from the previous value*/
 				for(j=0;j<MUSE_NB_CHANNELS;j++){
-					/*convert to uV float values*/
-					//10bits encoding -> Range: 0.0 - 1682.0 in microvolts
-					cur_eeg_values[j] = cur_eeg_values[j]+(float)muse_trslt_pkt_ptr->eeg_data[j*MUSE_NB_DELTAS+i]/1023*1682;		
+					cur_eeg_values[j] = cur_eeg_values[j]+muse_trslt_pkt_ptr->eeg_data[j*MUSE_NB_DELTAS+i];		
 				}
 				
-				for(j=0;j<output_intrface_array->nb_output;j++){
-					/*Push the new sample in the output*/
-					COPY_DATA_IN(output_intrface_array->output_interface[j], &data_struct);
-				}
+				/*Push the new sample in the output*/
+				COPY_DATA_IN(&data_struct);
 			}
 		
 			break;
@@ -132,12 +123,12 @@ int muse_translate_pkt(void *packet, void* output)
 int muse_send_keep_alive_pkt(void *param __attribute__ ((unused)))
 {
 	const char *msg = MUSE_KEEP_ALIVE;
-	int status = 0;
+	int status;
 
 	do {
 		status = send(get_socket_fd(), msg, 3, 0);
 		sleep(seconds);
-	} while (status >= 0);
+	} while (status > 0);
 
 	return (0);
 }
@@ -166,7 +157,7 @@ int muse_send_pkt(void *param)
  * @brief Processes the packet
  * @param param
  */
-int muse_process_pkt(void *packet, void *output)
+int muse_process_pkt(void *param)
 {
 	int i=0;
 	int nb_of_soft_packets;
@@ -183,15 +174,15 @@ int muse_process_pkt(void *packet, void *output)
 	param_translate_pkt.nb_samples = MUSE_NB_CHANNELS;
 	
 	// Uncompressed or raw at this point
-	param_t *packet_ptr = (param_t *)packet;
+	param_t *param_ptr = (param_t *) param;
 	
 	int nb_bits = 0;
 	
-	if (packet_ptr->len >= 6) {
+	if (param_ptr->len >= 6) {
 		
 		/*pre-parse the bluetooth packet to know how many soft packets*/
 		/*are present*/	
-		nb_of_soft_packets = preparse_packet((unsigned char *)packet_ptr->ptr, packet_ptr->len, soft_packets_headers, soft_packets_types);
+		nb_of_soft_packets = preparse_packet((unsigned char *)param_ptr->ptr, param_ptr->len, soft_packets_headers, soft_packets_types);
 	
 		/*process each individual packet*/
 		for(i=0;i<nb_of_soft_packets;i++){
@@ -200,28 +191,30 @@ int muse_process_pkt(void *packet, void *output)
 				case MUSE_UNCOMPRESS_PKT:
 
 					/*Extract EEG values*/
-					parse_uncompressed_packet((unsigned char *)&(packet_ptr->ptr[soft_packets_headers[i]+1]), eeg_data_buffer);
-				
-					/*Send them to the translator*/
-					param_translate_pkt.type = MUSE_UNCOMPRESS_PKT;
-					TRANS_PKT_FC(&param_translate_pkt, output);
+					parse_uncompressed_packet(&(param_ptr->ptr[soft_packets_headers[i]+1]), eeg_data_buffer);
+					
+						/*Send them to the translator*/
+						param_translate_pkt.type = MUSE_UNCOMPRESS_PKT;
+						TRANS_PKT_FC(&param_translate_pkt);
 
 				break;
 		
 				case MUSE_COMPRESSED_PKT:	
 
 					/*Extract delta values values*/
-					parse_compressed_packet((unsigned char *)&(packet_ptr->ptr[soft_packets_headers[i]]), eeg_data_buffer);
+					parse_compressed_packet(&(param_ptr->ptr[soft_packets_headers[i]]), eeg_data_buffer);
 
 					/*Send them to the translator*/
 					param_translate_pkt.type = MUSE_COMPRESSED_PKT;
-					TRANS_PKT_FC(&param_translate_pkt, output);
+					TRANS_PKT_FC(&param_translate_pkt);
 
 
 				break;
 			}
 			
 		}
+		
+		
 		
 	} else {
 		printf("Invalid packet - too small\n");
@@ -234,10 +227,10 @@ int muse_process_pkt(void *packet, void *output)
  * muse_read_pkt()
  * @brief Reads incoming packets from the socket
  */
-int muse_read_pkt(void *output)
+int muse_read_pkt(void *param __attribute__ ((ubufnused)))
 {
 	int bytes_read = 0;
-	unsigned char buf[BUFSIZE] = { 0 };
+	char buf[BUFSIZE] = { 0 };
 	param_t param_start_transmission = { MUSE_START_TRANSMISSION, 3 };
 	param_t param_request_transmission = { MUSE_VERSION, 5};
 	param_t param_preset_transmission = { MUSE_PRESET, 6};
@@ -247,6 +240,7 @@ int muse_read_pkt(void *output)
 	muse_send_pkt((void *)&param_request_transmission);
 	muse_send_pkt((void *)&param_host_transmission);
 	muse_send_pkt((void *)&param_preset_transmission);
+	
 	muse_send_pkt((void *)&param_start_transmission);
 
 	do {
@@ -262,9 +256,9 @@ int muse_read_pkt(void *output)
 		param_process_pkt.ptr = buf;
 		param_process_pkt.len = bytes_read;
 		/*send the packet for processing*/
-		PROCESS_PKT_FC(&param_process_pkt, output);
+		PROCESS_PKT_FC(&param_process_pkt);
 		memset(buf, 0, bytes_read);
-		
+
 	} while (1);
 	return (0);
 }

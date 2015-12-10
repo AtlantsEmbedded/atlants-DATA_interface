@@ -66,10 +66,10 @@ int openbci_cleanup(void *param __attribute__ ((unused)))
  * openbci_translate_pkt
  * @brief translate MUSE packet
  */
-int openbci_translate_pkt(void *packet __attribute__ ((unused)),void *output __attribute__ ((unused)))
+int openbci_translate_pkt(void *param __attribute__ ((unused)))
 {
 	// Unused for now
-	param_t *packet_ptr __attribute__ ((unused)) = (param_t *) packet;
+	param_t *param_ptr __attribute__ ((unused)) = (param_t *) param;
 
 	// Do some things to print out the packet
 	return (0);
@@ -107,18 +107,18 @@ int openbci_send_pkt(void *param)
  * @brief Processes the packet
  * @param param
  */
-int openbci_process_pkt(void *packet, void* output)
+int openbci_process_pkt(void *param)
 {
 
 	// Uncompressed or raw at this point
-	param_t *packet_ptr = (param_t *) packet;
+	param_t *param_ptr = (param_t *) param;
 
-	fprintf(stdout, "Bytes read = %d\n", packet_ptr->len);
+	fprintf(stdout, "Bytes read = %d\n", param_ptr->len);
 
-	hexdump((unsigned char *)packet_ptr->ptr, packet_ptr->len);
+	hexdump((unsigned char *)param_ptr->ptr, param_ptr->len);
 
 	if (_TRANS_PKT_FC) {
-		TRANS_PKT_FC(packet,output);
+		TRANS_PKT_FC(param);
 	}
 
 	return (0);
@@ -128,7 +128,7 @@ int openbci_process_pkt(void *packet, void* output)
  * openbci_read_pkt()
  * @brief Reads incoming packets from the socket
  */
-int openbci_read_pkt(void* output)
+int openbci_read_pkt(void *param __attribute__ ((unused)))
 {
 
 	int bytes_read = 0;
@@ -159,7 +159,7 @@ int openbci_read_pkt(void* output)
 		offset += num;
 		param_translate_pkt.ptr = buf;
 		param_translate_pkt.len = num;
-		PROCESS_PKT_FC(&param_translate_pkt, output);
+		PROCESS_PKT_FC(&param_translate_pkt);
 
 	} while (check > 0);
 
@@ -187,7 +187,7 @@ int openbci_read_pkt(void* output)
 		param_translate_pkt.ptr = buf;
 		param_translate_pkt.len = DATA_PACKET_LENGTH;
 
-		PROCESS_PKT_FC(&param_translate_pkt,output);
+		PROCESS_PKT_FC(&param_translate_pkt);
 
 		samples++;
 

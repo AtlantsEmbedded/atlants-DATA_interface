@@ -7,11 +7,11 @@
     <compression>TRUE</compression>
     <keep_alive>TRUE</keep_alive>keep_alive>
     <keep_time>9</keep_time>
-    <remote_addr>00:06:66:6F:4C:FA</remote_addr>
+    <remote_addr>00:06:66:6C:05:91</remote_addr>
     <process_data>FALSE</process_data>
     <buffer>TRUE</buffer>
-	<shm_key>5678</shm_key>
-	<sem_key>1234</sem_key>
+	<shm_key>2211</shm_key>
+	<sem_key>1728</sem_key>
 	<nb_data_channels>4</nb_data_channels>
     <window_size>110</window_size>
     <nb_pages>2</nb_pages>
