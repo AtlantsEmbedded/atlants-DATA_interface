@@ -23,7 +23,6 @@
 
 #define MUSE_NB_CHANNELS 4
 #define MUSE_NB_DELTAS 16
-//#define MUSE_MAX_NB_PACKETS 10
 
 typedef enum { MUSE_RAW_EEG, MUSE_COMP_MUSE_EEG, MUSE_UNCOMP_MUSE_EEG, MUSE_SYNC, MUSE_DRL_REF, MUSE_ERROR, 
 	MUSE_ACCEL, MUSE_BATT } muse_pkt_type_t;
@@ -37,9 +36,9 @@ typedef struct muse_translt_pkt_s {
 
 int muse_connect_dev(void *param);
 int muse_init_hardware(void *param);
-int muse_read_pkt(void *param);
+int muse_read_pkt(void *output);
 int muse_send_keep_alive_pkt(void *param);
-int muse_send_pkt(void *param);
-int muse_translate_pkt(void *param);
-int muse_process_pkt(void * param);
+int muse_send_pkt(void *output);
+int muse_translate_pkt(void *packet, void* output);
+int muse_process_pkt(void *packet, void *output);
 int muse_cleanup(void *param);

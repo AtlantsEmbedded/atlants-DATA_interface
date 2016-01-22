@@ -1,6 +1,6 @@
 /**
  * @file muse_pack_parser.c
- * @author Frédéric Simard, Atlans embedded (frederic.simard.1@outlook.com)
+ * @author Frédéric Simard, Atlans embedded (fred.simard@atlantsembedded.com)
  * @date June, 2015
  * @brief This file implements the function required to parse a packet
  *        sent by the muse. The following packets types can be parsed:
@@ -32,6 +32,8 @@ int compute_quantization(int quantizations);
 void compressed_parse_medians(unsigned char* medians_header, int* quantizations, int* medians);
 int compressed_parse_bit_length(unsigned char* bit_length_header);
 int compressed_parse_deltas(unsigned char* bits_header, int* median, int* quantization, int* deltas);
+
+void shift_one_bit(char* cur_byte, int* byteshift, int* bitshift, unsigned char* bits_header);
 
 
 /**
@@ -182,12 +184,12 @@ int parse_compressed_packet(unsigned char* packet_header, int* deltas)
 	/*parse out the deltas*/
 	parsed_bits_length = compressed_parse_deltas(&(packet_header[DELTAS_OFFSET]), medians, quantizations, deltas);
 	
+	/*error, the number of bits parser doesn't equal the declarations (usually a major bug)*/
 	if(expected_bits_length!=parsed_bits_length){
 	
 		printf("error, parsing compressed packet\n");
 		printf("expected_bits_length: %i\n",expected_bits_length);
 		printf("parsed_bits_length: %i\n",parsed_bits_length);
-		
 	}
 	
 	return EXIT_SUCCESS;
@@ -226,8 +228,6 @@ void compressed_parse_medians(unsigned char* medians_header, int* quantizations,
 	/*extract fourth median and fourth quantization bits*/
 	medians[3] = (int)((medians_header[3]&0xc0)>>6 | (medians_header[4]&0x0f)<<2);
 	quantizations[3] = (int)(medians_header[4]&0xf0)>>4;
-	
-	//printf("%i, %i, %i, %i\n",medians[0],medians[1],medians[2],medians[3]);
 	
 	/*Convert the bit values of the quantizations to integers*/
 	quantizations[0] = compute_quantization(quantizations[0]);
@@ -301,11 +301,12 @@ int compressed_parse_deltas(unsigned char* bits_header, int* median, int* quanti
 {
 	/*Variables that navigates in loops and in char array*/
 	/*loops iterator*/
-	int i,j,d=0;
+	int i,j,k,d=0;
 	/*location in the byte*/
 	int bitshift = 0;
 	/*location in the stream of bytes*/
 	int byteshift = 0;
+	int elias_n = 0;
 	/*Byte currently parsed*/
 	char cur_byte = 0;
 	
@@ -317,29 +318,10 @@ int compressed_parse_deltas(unsigned char* bits_header, int* median, int* quanti
 	int remainder_value = 0;
 	int sign_value = 0;
 	
-	/*Variables for the remainder*/
-	/*nb of bits in the remainder (watchout might be actualized during processing)*/
-	//int maxreminderbits = 0;
-	/*number above which another bit needs to be added to the remainder*/
-	//int max1less = 0;
-	
-	/*Variables for the Elias code*/
-	/*counter of 0s in the elias code*/
-	//int nb_zeros = 0;
-	/*condition for the loop parsing the zeros*/
-	//char zeros_parsed = 0;
-	/*binary code extracted from elias code*/
-	//int elias_code = 0;
-	
 	/*get the first byte of the stream*/
 	cur_byte = bits_header[byteshift];
 	
-	// activate to show the first byte
-	//printf("initial state\n");
-	//printbits(cur_byte);
-	//printf("\n");
-	
-	/*for all 4 medians*/
+	/*for all 4 channels*/
 	for(i=0;i<4;i++){
 		
 		/*if median is 0, then all deltas are 0s*/
@@ -356,378 +338,149 @@ int compressed_parse_deltas(unsigned char* bits_header, int* median, int* quanti
 		else
 		{
 			
-			/*if median below 14*/
-			//if(median[i]<=14){
+			/*for all deltas*/
+			for(j=0;j<16;j++){				
+					
+				/**************************/
+				/* Suppose Unary Encoding */
+				/**************************/
+				/******************/
+				/* Quotient       */
+				/******************/
+				/*parse out the quotient*/
+				quotient_parsed = 0;
+				quotient_value = 0;
 				
-				/******************/
-				/* Unary Encoding */
-				/******************/
-				/*for all deltas*/
-				for(j=0;j<16;j++){
+				/*count the number of ones before we reach a 0*/
+				while(quotient_parsed==0 && quotient_value < 15){
 					
-					/******************/
-					/* Quotient       */
-					/******************/
-					/*parse out the quotient*/
-					quotient_parsed = 0;
-					quotient_value = 0;
-					
-					/*count the number of ones before we reach a 0*/
-					while(quotient_parsed==0){
-						
-						/*check if leftmost bit is a one*/
-						if((cur_byte&0x80)){
-							/*yes, add one to quotient*/
-							quotient_value++;
-						}
-						else
-						{
-							/*else, the quotient is parsed*/
-							quotient_parsed = 1;
-						}
-						
-						/*shift the byte of one space*/
-						cur_byte = cur_byte<<1;
-						/*count the shift*/
-						bitshift++;
-						
-						/*check if we are due to load the next byte*/
-						if(bitshift >= 8){
-							/*increase byte count*/
-							byteshift+=1;
-							/*reset the shift*/
-							bitshift = 0;
-							/*get the next byte*/
-							cur_byte = bits_header[byteshift];
-						}
+					/*check if leftmost bit is a one*/
+					if((cur_byte&0x80)){
+						/*yes, add one to quotient*/
+						quotient_value++;
 					}
-					
-					/*activate to show current byte after quotient*/
-					//printf("\n");
-					//printf("Byte, after quotient\n");
-					//printf("cur_byte:");
-					//printbits(cur_byte);
-					//printf("\n");
-					
-					if(quotient_value>=15){
-						printf("quotient value: %i\n",quotient_value);
-					}
-					
-					/***********************************/
-					/* Remainder                       */
-					/***********************************/
-					
-					remainder_value = 0;
-					
-					/*determine the number of bits used*/
-					int maxreminderbits = (int)floor(log2((double)median[i]));// (int)(Math.Log(median[ch]) / Math.Log(2));
-					/*The maximium value for not using an extra bit*/
-					int max1less = (int)pow(2.0, (double)(maxreminderbits+1)) - median[i];   
-					
-					/*if median is equal to 1, the equation above didn't provided the correct result*/
-					/*fix it*/
-					if(median[i]==1){
-						maxreminderbits = 1;
-					}
-					
-					/*Push in the minimum number of bits*/
-					for (d = 0; d < maxreminderbits; d++){
-						
-						/*pack in a bit if needed*/
-						remainder_value = remainder_value<<1;
-						if(cur_byte&0x80){				
-							remainder_value = remainder_value | 0x01;
-						}
-						
-						/*shift bit and...*/		
-						cur_byte = cur_byte<<1;
-						bitshift++;
-					
-						/*...check if another byte is needed*/	
-						if(bitshift >= 8){
-							byteshift += 1;
-							bitshift = 0;
-							cur_byte = bits_header[byteshift];
-						}
-						
-					}
-					
-					/************************/
-					/* Remainder (extra bit)*/
-					/************************/
-					
-					/*check if another remainder bit is required*/
-					if (remainder_value >= max1less)  
+					else
 					{
-						/*yes, loop once more*/
-						maxreminderbits++;
-						
-						for (; d < maxreminderbits; d++){
-							
-							/*packin one more bit*/
-							remainder_value = remainder_value << 1;
-							if(cur_byte&0x80){
-								remainder_value = remainder_value | 0x01;
-									
-							}
-					
-							/*shift bit and...*/						
-							cur_byte = cur_byte<<1;
-							bitshift++;
-						
-							/*...check if another byte is needed*/	
-							if(bitshift >= 8){
-								byteshift += 1;
-								bitshift = 0;
-								cur_byte = bits_header[byteshift];
-							}
-							
-						}
-						
-						/*readjust remainder*/
-						remainder_value = remainder_value - max1less;
+						/*else, the quotient is parsed*/
+						quotient_parsed = 1;
 					}
 					
-					/*Activate to see byte after remainder*/
-					//printf("\n");
-					//printf("Byte, after remainder\n");
-					//printf("cur_byte:");
-					//printbits(cur_byte);
-					//printf("\n");
-					
-					/************************/
-					/* Sign                 */
-					/************************/
-					
-					/*if bit is 1, positive*/
-					if(cur_byte&0x80){
-						sign_value = -1;
-					}
-					/*if bit is 0, negative*/
-					else{
-						sign_value = 1;
-					}
-								
-					/*shift bit and...*/						
-					cur_byte = cur_byte<<1;
-					bitshift++;
-					
-					/*...check if another byte is needed*/	
-					if(bitshift >= 8){
-						byteshift+=1;
-						bitshift = 0;
-						cur_byte = bits_header[byteshift];
-					}
-					
-					/*Activate to show the details of delta extraction*/
-					//printf("\n");
-					//printf("Delta[%i]",j);
-					//printf("\n");
-					//printf("median[i]: %i\n",median[i]);
-					//printf("quantization[i]: %i\n",quantization[i]);
-					//printf("quotient_value: %i\n",quotient_value);
-					//printf("remainder_value: %i\n",remainder_value);
-					//printf("sign_value: %i\n",sign_value);
-					//printf("\n");
-					//printf("System state");
-					//printf("cur_byte:");
-					//printbits(cur_byte);
-					//printf("\n");
-					//printf("byteshift: %i\n",bitshift);
-					
-					/*Compute and store this delta*/
-					deltas[j+i*16] = (quotient_value * median[i] + remainder_value) * sign_value * quantization[i];
+					shift_one_bit(&cur_byte,&byteshift,&bitshift, bits_header);
 					
 				}
-#if 0				
-			}
-			else
-			{
-			
-				/***********************************/
-				/* ELIAS CODE                      */
-				/***********************************/
-				/*for all deltas*/
-				for(j=0;j<16;j++){
-			
-					/***********************************/
-					/* SKIP THE ONES                   */
-					/***********************************/
-					/*starts with 15 ones*/
-					for (d = 0; d < 15; d++){
-						
-						/*shift bit and...*/						
-						cur_byte = cur_byte<<1;
-						bitshift++;
-							
-						/*...check if another byte is needed*/	
-						if(bitshift >= 8){
-							byteshift+=1;
-							bitshift = 0;
-							cur_byte = bits_header[byteshift];
-						}
-						
-					}
+				
+				/***************************/
+				/* Check if ELIAS Encoding */
+				/***************************/
+				if(quotient_value==15){
 					
-					/***********************************/
-					/* COUNT THE ZEROS                 */
-					/***********************************/
-					/*then N-1 zeros*/
-					zeros_parsed = 0;
-					nb_zeros = 0;
-					
-					/*count the number of 0s*/
-					while(~zeros_parsed){
-					
-						/*check if we found a 1*/
-						if((cur_byte&0x80)){
-							/*yep, we found the last of it*/
-							zeros_parsed = 1;
-						}
-						else
-						{
-							/*nope, keep on going*/
-							nb_zeros = nb_zeros+1;
-							
-							/*shift bit and...*/						
-							cur_byte = cur_byte<<1;
-							bitshift++;
-							
-							/*...check if another byte is needed*/	
-							if(bitshift >= 8){
-								byteshift+=1;
-								bitshift = 0;
-								cur_byte = bits_header[byteshift];
-							}
-						}
-					}
-					
+					/*yes! reset quotient value*/
 					quotient_value = 0;
+					elias_n = 0;
 					
-					/***********************************/
-					/* QUOTIENT (binary)               */
-					/***********************************/
-					/*read the N bits that follows*/
-					for (d = 0; d <= nb_zeros; d++){
+					/*count the number of zeros -> n*/
+					while(!(cur_byte&0x80)){
+						elias_n++;
 						
-						/*pack in next bit*/
-						quotient_value = elias_code<<1;
-						if((cur_byte&0x80)){
-							zeros_parsed = 1;
-							quotient_value = elias_code|0x01;
-							
-						}
-						else
-						{
-							/*just to make sure, sometimes a one is added after the shift*/
-							quotient_value = elias_code|0x00;
-						}
-						
-						/*shift bit and...*/		
-						cur_byte = cur_byte<<1;
-						bitshift++;
-						
-						/*...check if another byte is needed*/	
-						if(bitshift >= 8){
-							byteshift+=1;
-							bitshift = 0;
-							cur_byte = bits_header[byteshift];
-						}
+						shift_one_bit(&cur_byte,&byteshift,&bitshift, bits_header);
 					}
 					
-					/***********************************/
-					/* Remainder                       */
-					/***********************************/
-					remainder_value = 0;
+					/*we found the first one (value of 2^n)*/
+					quotient_value += pow(2,elias_n);
+					
+					shift_one_bit(&cur_byte,&byteshift,&bitshift, bits_header);
 						
-					// SECOND CALCULATE REMAINDER
-					int maxreminderbits = (int)floor(log2((double)median[i]));// (int)(Math.Log(median[ch]) / Math.Log(2));
-					int max1less = (int)pow(2.0, (double)(maxreminderbits+1)) - median[i]; // The maximium value for not using an extra bit                        
+					/*consider the n following bits*/
+					for(k=elias_n;k>0;k--){
 						
-					/*push in the minimum number of bits*/
-					for (d = 0; d < maxreminderbits; d++){
-						remainder_value = remainder_value<<1;
-							
+						if(cur_byte&0x80){
+							quotient_value += pow(2,k-1);
+						}
+						
+						shift_one_bit(&cur_byte,&byteshift,&bitshift, bits_header);
+					}
+				}
+				
+				/***********************************/
+				/* Remainder                       */
+				/***********************************/
+				
+				remainder_value = 0;
+				
+				/*determine the number of bits used*/
+				int maxreminderbits = (int)floor(log2((double)median[i]));// (int)(Math.Log(median[ch]) / Math.Log(2));
+				/*The maximium value for not using an extra bit*/
+				int max1less = (int)pow(2.0, (double)(maxreminderbits+1)) - median[i];   
+				
+				/*if median is equal to 1, the equation above didn't provided the correct result*/
+				/*this fix it*/
+				if(median[i]==1){
+					maxreminderbits = 1;
+				}
+				
+				/*Push in the minimum number of bits*/
+				for (d = 0; d < maxreminderbits; d++){
+					
+					/*pack in a bit if needed*/
+					remainder_value = remainder_value<<1;
+					if(cur_byte&0x80){				
+						remainder_value = remainder_value | 0x01;
+					}
+					
+					shift_one_bit(&cur_byte,&byteshift,&bitshift, bits_header);
+					
+				}
+				
+				/************************/
+				/* Remainder (extra bit)*/
+				/************************/
+				
+				/*check if another remainder bit is required*/
+				if (remainder_value >= max1less)  
+				{
+					/*yes, loop once more*/
+					maxreminderbits++;
+					
+					for (; d < maxreminderbits; d++){
+						
+						/*packin one more bit*/
+						remainder_value = remainder_value << 1;
 						if(cur_byte&0x80){
 							remainder_value = remainder_value | 0x01;
-						}
-							
-						/*shift bit and...*/		
-						cur_byte = cur_byte<<1;
-						bitshift++;
-						
-						/*...check if another byte is needed*/	
-						if(bitshift >= 8){
-							byteshift += 1;
-							bitshift = 0;
-							cur_byte = bits_header[byteshift];
-						}
-							
-					}
-						
-					/*check if another remainder bit is required*/
-					if (remainder_value >= max1less)  
-					{
-						/*yes, loop once more*/
-						maxreminderbits++;
-							
-						/*packin one more bit*/
-						for (; d < maxreminderbits; d++){
-							
-							/*pack the next bit in the remainder*/
-							remainder_value = remainder_value << 1;
-							if(cur_byte&0x80){
-								remainder_value = remainder_value | 0x01;
-							}
-								
-							/*shift bit and...*/	
-							cur_byte = cur_byte<<1;
-							bitshift++;
-							
-							/*...check if another byte is needed*/	
-							if(bitshift >= 8){
-								byteshift += 1;
-								bitshift = 0;
-								cur_byte = bits_header[byteshift];
-							}
 								
 						}
+				
+						shift_one_bit(&cur_byte,&byteshift,&bitshift, bits_header);
 						
-						/*readjust the value of the remainder*/	
-						remainder_value = remainder_value - max1less;
-					}
-						
-					/***********************************/
-					/* SIGN                            */
-					/***********************************/
-					/*check the sign bit 1-positive, 0-negative*/
-					if(cur_byte&0x80){
-						sign_value = 1;
-					}
-					else{
-						sign_value = -1;
-					}
-									
-					/*shift bit and...*/				
-					cur_byte = cur_byte<<1;
-					bitshift++;
-						
-					/*...check if another byte is needed*/	
-					if(bitshift >= 8){
-						byteshift+=1;
-						bitshift = 0;
-						cur_byte = bits_header[byteshift];
 					}
 					
-					/*Compute and store this delta*/
-					deltas[j+i*16] = (quotient_value * median[i] + remainder_value) * sign_value * quantization[i];
-						
+					/*readjust remainder*/
+					remainder_value = remainder_value - max1less;
 				}
+				
+				/************************/
+				/* Sign                 */
+				/************************/
+				
+				/*if bit is 1, positive*/
+				if(cur_byte&0x80){
+					sign_value = -1;
+				}
+				/*if bit is 0, negative*/
+				else{
+					sign_value = 1;
+				}
+							
+				shift_one_bit(&cur_byte,&byteshift,&bitshift, bits_header);
+				
+				/*Compute and store this delta*/
+				deltas[j+i*16] = (quotient_value * median[i] + remainder_value) * sign_value * quantization[i];
+				
 			}
-#endif
 		}
 	}
 	
+	/*compute the number of bits parsed*/
 	return byteshift*8+bitshift;
 }
 
@@ -757,18 +510,25 @@ void parse_uncompressed_packet(unsigned char* values_header, int* values)
 	values[2] = (unsigned int)(((values_header[3]&0x3F)<<4)|(values_header[2]&0xF0)>>4);
 	values[3] = (unsigned int)(((values_header[4]&0xFF)<<2)|((values_header[3]&0xC0)>>6));
 
-#if 0
-	/*check for sign bit (two's complement coding)*/
-	for(i=0;i<4;i++){		
-		if(values[i]&0x0200){
-			print_int_bits(values[i]);
-			values[i] = values[i]&0x000003FF;
-			//values[i] = values[i]|0xFFFFFC00; // activate for 
-		}
-	}
-#endif	
 }
 
+void shift_one_bit(char* cur_byte, int* byteshift, int* bitshift, unsigned char* bits_header){
+	
+	/*shift the byte of one space*/
+	(*cur_byte) = (*cur_byte)<<1;
+	/*count the shift*/
+	(*bitshift)++;
+		
+	/*check if we are due to load the next byte*/
+	if((*bitshift) >= 8){
+		/*increase byte count*/
+		(*byteshift)+=1;
+		/*reset the shift*/
+		(*bitshift) = 0;
+		/*get the next byte*/
+		(*cur_byte) = bits_header[*byteshift];
+	}
+}
 
 
 /**

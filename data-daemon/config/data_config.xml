@@ -7,7 +7,7 @@
     <compression>TRUE</compression>
     <keep_alive>TRUE</keep_alive>keep_alive>
     <keep_time>9</keep_time>
-    <remote_addr>00:06:66:6F:4C:FA</remote_addr>
+    <remote_addr>00:06:66:78:99:48</remote_addr>
     <process_data>FALSE</process_data>
     <buffer>TRUE</buffer>
 	<shm_key>5678</shm_key>

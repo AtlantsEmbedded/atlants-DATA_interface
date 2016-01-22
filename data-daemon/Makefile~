@@ -61,10 +61,10 @@ OBJECTS_DIR   = ./
 
 ####### Files
 
-SOURCES       = src/main.c \
-		src/xml.c \
+SOURCES       = src/xml.c \
 		src/socket.c \
 		src/serial.c \
+		src/main.c \
 		src/hardware.c \
 		src/data_output.c \
 		src/debug.c \
@@ -135,6 +135,9 @@ dist:
 
 ####### Compile
 
+main.o: src/main.c 
+	$(CC) -c $(CFLAGS) $(INCPATH) -o main.o src/main.c
+
 xml.o: src/xml.c 
 	$(CC) -c $(CFLAGS) $(INCPATH) -o xml.o src/xml.c 
 
@@ -143,9 +146,6 @@ socket.o: src/socket.c
 
 serial.o: src/serial.c 
 	$(CC) -c $(CFLAGS) $(INCPATH) -o serial.o src/serial.c 
-
-main.o: src/main.c 
-	$(CC) -c $(CFLAGS) $(INCPATH) -o main.o src/main.c
 
 debug.o: src/debug.c
 	$(CC) -c $(CFLAGS) $(INCPATH) -o debug.o src/debug.c 

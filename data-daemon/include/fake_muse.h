@@ -9,6 +9,6 @@ int fake_muse_init_hardware(void *param);
 int fake_muse_read_pkt(void *param);
 int fake_muse_send_keep_alive_pkt(void *param);
 int fake_muse_send_pkt(void *param);
-int fake_muse_translate_pkt(void *param);
-int fake_muse_process_pkt(void * param);
+int fake_muse_translate_pkt(void *packet,void *output);
+int fake_muse_process_pkt(void *packet,void *output);
 int fake_muse_cleanup(void *param);

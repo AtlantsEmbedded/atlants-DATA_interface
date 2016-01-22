@@ -26,7 +26,7 @@ static int sport;
  * @param Returns socket to be used to connect to device
  * @return sock
  */
-inline int get_serial_fd(void)
+int get_serial_fd(void)
 {
 	return sport;
 }
@@ -36,7 +36,7 @@ inline int get_serial_fd(void)
  * @param Sets socket to be used to connect to device
  * @param fd
  */
-inline void set_serial_fd(int fd)
+void set_serial_fd(int fd)
 {
 	sport = fd;
 }

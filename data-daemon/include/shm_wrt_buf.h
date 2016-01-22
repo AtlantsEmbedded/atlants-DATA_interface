@@ -14,35 +14,27 @@
  *        of pages should be kept as small as possible to prevent processing old data while
  *        dropping newest...
  */
-
-#define SHM_KEY 5678
-
-//#define NB_FEATURES 4
-//#define FEATURE_SIZE 4 // to be fixed, only supporting int right now
-//#define SAMPLE_SIZE NB_FEATURES*FEATURE_SIZE /*4 channels, each containing an int*/ 
-//#define NB_SAMPLES_PER_PAGE 110 /*nb of samples per page*/
-//#define NB_PAGE 2 /*2 pages, one sent and the other being filled*/
-//#define SHM_PAGE_SIZE NB_SAMPLES_PER_PAGE*SAMPLE_SIZE /*size of one page, containing a max of 250 samples*/
-//#define SHM_BUF_SIZE SHM_PAGE_SIZE*NB_PAGE /*size of the memory array*/ 
  
-/*this list must be shared between the following processes:
- * - DATA_interface
- * - DATA_preprocessing
- * - application software
- */
-#define SEM_KEY 1234 /*key to sem array*/
-#define NB_SEM 6/*2 semaphore, one posted for data avail, one posted for data read*/
-
-#define INTERFACE_OUT_READY 0 //sem posted when interface has written data
-#define PREPROC_IN_READY 1 //sem posted when preprocess ready for new data
-#define PREPROC_OUT_READY 2 //sem posted when preprocess has written a feature vector
-#define APP_IN_READY 3 //sem posted when application ready for new feature vector
-#define CONNECT_INTERFACE_REQ 4 //sem posted when application request interface connection
-#define INTERFACE_CONNECTED 5 //sem posted when interface connection established
-/**/
-
-int shm_wrt_init(void *param);
-int shm_wrt_write_in_buf(void *param);
+ 
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
+	
+typedef struct shm_wrt_s{
+	
+	shm_mem_options_t shm_options; /*buffer options*/
+	int semid; /*id of the shared memory array*/
+	int shmid; /*id of semaphore set*/
+	int samples_count; /*keeps track of the number of samples that have been written in the page*/
+	int current_page; /*keeps track of the page to be written into*/
+	char page_opened; /*flags indicate if the page is being written into*/
+	char* shm_buf; /*pointer to the beginning of the shared buffer*/
+	struct sembuf *sops; /*pointer to operations to perform*/
+	
+}shm_wrt_t;
+ 
+void* shm_wrt_init(void *param);
+int shm_wrt_write_in_buf(void *param, void *input);
 int shm_wrt_cleanup(void *param);
 
 

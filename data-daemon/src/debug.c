@@ -20,7 +20,7 @@
 
 /**
  * hexdump(void *mem, unsigned int len)
- * @brief Dump buffer
+ * @brief Dump buffer on the screen
  * @param mem
  * @param len
  */

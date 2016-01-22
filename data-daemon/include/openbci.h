@@ -19,10 +19,10 @@ typedef struct openbci_pkt_s {
 } openbci_pkt_t;
 
 int openbci_init_hardware(void *param);
-int openbci_read_pkt(void *param);
+int openbci_read_pkt(void* output);
 int openbci_send_keep_alive_pkt(void *param);
 int openbci_send_pkt(void *param);
-int openbci_translate_pkt(void *param);
-int openbci_process_pkt(void * param);
+int openbci_translate_pkt(void *packet,void* output);
+int openbci_process_pkt(void *packet,void* output);
 int openbci_connect_dev(void *param);
 int openbci_cleanup(void *param);

@@ -17,6 +17,8 @@
 #include "hardware.h"
 #include "socket.h"
 
+extern void app_cleanup(void);
+
 /**
  * ctrl_c_handler(int signal)
  * @brief Ctrl C signal handler
@@ -25,6 +27,6 @@
 void ctrl_c_handler(int signal)
 {
 	fprintf(stdout, "Interrupt caught[NO: %d ]\n", signal);
-	DEVICE_CLEANUP_FC();
+	app_cleanup();
 	exit(0);
 }
