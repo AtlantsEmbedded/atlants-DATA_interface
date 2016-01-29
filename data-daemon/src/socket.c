@@ -22,7 +22,7 @@ static int sock;
  * @param Returns socket to be used to connect to device
  * @return sock
  */ 
-inline int get_socket_fd(void) {
+int get_socket_fd(void) {
 	return sock;
 }
 
@@ -30,7 +30,7 @@ inline int get_socket_fd(void) {
  * set_socket_fd()
  * @param Sets socket to be used to connect to device
  */ 
-inline void set_socket_fd(int fd) {
+void set_socket_fd(int fd) {
 	sock = fd;
 }
 

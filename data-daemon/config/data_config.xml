@@ -18,6 +18,6 @@
     <samples>0</samples>
     <number_runs>0</number_runs>
     <conn_attempts>3</conn_attempts>
-    <output_format>SHM</output_format>
+    <output_format>CSV</output_format>
   </appAttributes>
  </appConfig>

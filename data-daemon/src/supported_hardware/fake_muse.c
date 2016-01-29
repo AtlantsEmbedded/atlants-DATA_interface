@@ -73,13 +73,13 @@ int fake_muse_translate_pkt(void *packet,void *output)
 			/*It's an uncompressed packet, we just received the actual eeg values*/
 			/*do nothing, the data is good*/
 			for(i=0;i<MUSE_NB_CHANNELS;i++){
-				cur_eeg_values[i] = muse_trslt_pkt_ptr->eeg_data[i];
+				cur_eeg_values[i] = (float)muse_trslt_pkt_ptr->eeg_data[i]/1023*1682;
 			}
 					
 			/*Push the new sample in the output*/
 			for(i=0;i<output_intrface_array->nb_output;i++){
-					/*Push the new sample in the output*/
-					COPY_DATA_IN(output_intrface_array->output_interface[i], &data_struct);
+				/*Push the new sample in the output*/
+				COPY_DATA_IN(output_intrface_array->output_interface[i], &data_struct);
 			}
 				
 			break;
@@ -93,7 +93,7 @@ int fake_muse_translate_pkt(void *packet,void *output)
 				
 				/*compute the new value from the previous value*/	
 				for(j=0;j<MUSE_NB_CHANNELS;j++){
-					cur_eeg_values[j] = cur_eeg_values[j]+muse_trslt_pkt_ptr->eeg_data[delta_offset+j];
+					cur_eeg_values[j] = cur_eeg_values[j]+(float)muse_trslt_pkt_ptr->eeg_data[delta_offset+j]/1023*1682;
 				}
 				
 				/*Push the new sample in the output*/
@@ -164,8 +164,7 @@ int fake_muse_process_pkt(void *packet __attribute__ ((unused)),void *output)
 	
 	/*fill with random values*/
 	for(i=0;i<MUSE_NB_CHANNELS;i++){
-		eeg_data_buffer[i] = rand();
-		//eeg_data_buffer[i] = i;
+		eeg_data_buffer[i] = rand()%1023;
 	}
 	
 	/*one packet*/
