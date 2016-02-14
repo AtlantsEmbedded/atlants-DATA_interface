@@ -20,8 +20,8 @@ static int get_app_attributes(ezxml_t app_attribute, appconfig_t * app_info);
 static int sanity_check_app_attributes(ezxml_t app_attribute);
 
 const char *XML_app_elements[] =
-    { "debug", "interface", "device", "keep_alive", "keep_time", "compression", "remote_addr", "process_data", "buffer",
-	"shm_key","sem_key","nb_data_channels","window_size","nb_pages","samples", "number_runs", "conn_attempts",
+{ 
+	"debug", "device", "keep_alive", "remote_addr", "shm_key","sem_key","nb_data_channels","window_size","nb_pages",
 	"output_format"
 };
 
@@ -62,17 +62,9 @@ static int get_app_attributes(ezxml_t app_attribute, appconfig_t * app_info)
 		printf("appAttributes has an error\n");
 		return (-1);
 	}
-	ezxml_t tmp = ezxml_child(app_attribute, "interface");
-
-	/*Get appAttributes/app interface*/
-	if (tmp == NULL) {
-		printf("appAttributes->interface is missing\n");
-		return (-1);
-	}
-	memcpy(app_info->interface, tmp->txt, MAX_CHAR_FIELD_LENGTH);
 
 	/*Get appAttributes/device*/
-	tmp = ezxml_child(app_attribute, "device");
+	ezxml_t tmp = ezxml_child(app_attribute, "device");
 	if (tmp == NULL) {
 		printf("appAttributes->device is missing\n");
 		return (-1);
@@ -87,60 +79,17 @@ static int get_app_attributes(ezxml_t app_attribute, appconfig_t * app_info)
 	}
 	memcpy(app_info->remote_addr, tmp->txt, MAX_CHAR_FIELD_LENGTH);
 
-	/*Get appAttributes/compression*/
-	tmp = ezxml_child(app_attribute, "compression");
-	if (tmp == NULL) {
-		printf("appAttributes->compression is missing\n");
-		return (-1);
-	}
-
-	/*interpret and turn to boolean value*/
-	if (strncmp(tmp->txt, "TRUE", 4) == 0) {
-		app_info->compression = 1;
-	} else {
-		app_info->compression = 0;
-	}
-
 	/*Get appAttributes/keep_alive*/
 	tmp = ezxml_child(app_attribute, "keep_alive");
 	if (tmp == NULL) {
 		printf("appAttributes->keep_alive is missing\n");
 		return (-1);
 	}
-	
 	/*interpret and turn to boolean value*/
 	if (strncmp(tmp->txt, "TRUE", 4) == 0) {
 		app_info->keep_alive = 1;
 	} else {
 		app_info->keep_alive = 0;
-	}
-
-	/*Get appAttributes/process_data*/
-	tmp = ezxml_child(app_attribute, "process_data");
-	if (tmp == NULL) {
-		printf("appAttributes->process_data is missing\n");
-		return (-1);
-	}
-
-	/*interpret and turn to boolean value*/
-	if (strncmp(tmp->txt, "TRUE", 4) == 0) {
-		app_info->process_data = 1;
-	} else {
-		app_info->process_data = 0;
-	}
-
-	/*Get appAttributes/buffer*/
-	tmp = ezxml_child(app_attribute, "buffer");
-	if (tmp == NULL) {
-		printf("appAttributes->buffer is missing\n");
-		return (-1);
-	}
-
-	/*interpret and turn to boolean value*/
-	if (strncmp(tmp->txt, "TRUE", 4) == 0) {
-		app_info->buffer = 1;
-	} else {
-		app_info->buffer = 0;
 	}
 	
 	/*Get appAttributes/shm_key*/
@@ -151,7 +100,6 @@ static int get_app_attributes(ezxml_t app_attribute, appconfig_t * app_info)
 	}
 	app_info->shm_key = atoi(tmp->txt);
 	
-	
 	/*Get appAttributes/sem_key*/
 	tmp = ezxml_child(app_attribute, "sem_key");
 	if (tmp == NULL) {
@@ -160,7 +108,6 @@ static int get_app_attributes(ezxml_t app_attribute, appconfig_t * app_info)
 	}
 	app_info->sem_key = atoi(tmp->txt);
 	
-	
 	/*Get appAttributes/nb_data_channels*/
 	tmp = ezxml_child(app_attribute, "nb_data_channels");
 	if (tmp == NULL) {
@@ -168,7 +115,6 @@ static int get_app_attributes(ezxml_t app_attribute, appconfig_t * app_info)
 		return (-1);
 	}
 	app_info->nb_data_channels = (uint16_t) atoi(tmp->txt);
-	
 	
 	/*Get appAttributes/window_size*/
 	tmp = ezxml_child(app_attribute, "window_size");
@@ -185,38 +131,6 @@ static int get_app_attributes(ezxml_t app_attribute, appconfig_t * app_info)
 		return (-1);
 	}
 	app_info->nb_pages = (uint16_t) atoi(tmp->txt);
-	
-	/*Get appAttributes/samples*/
-	tmp = ezxml_child(app_attribute, "samples");
-	if (tmp == NULL) {
-		printf("appAttributes->samples is missing\n");
-		return (-1);
-	}
-	app_info->samples = (uint16_t) atoi(tmp->txt);
-
-	/*Get appAttributes/number_runs*/
-	tmp = ezxml_child(app_attribute, "number_runs");
-	if (tmp == NULL) {
-		printf("appAttributes->number_runs is missing\n");
-		return (-1);
-	}
-	app_info->number_runs = (uint16_t) atoi(tmp->txt);
-
-	/*Get appAttributes/conn_attempts*/
-	tmp = ezxml_child(app_attribute, "conn_attempts");
-	if (tmp == NULL) {
-		printf("appAttributes->conn_attempts is missing\n");
-		return (-1);
-	}
-	app_info->conn_attempts = (uint16_t) atoi(tmp->txt);
-
-	/*Get appAttributes/keep_time*/
-	tmp = ezxml_child(app_attribute, "keep_time");
-	if (tmp == NULL) {
-		printf("appAttributes->keep-time is missing\n");
-		return (-1);
-	}
-	app_info->keep_time = (uint16_t) atoi(tmp->txt);
 
 	/*Get appAttributes/output_format*/
 	tmp = ezxml_child(app_attribute, "output_format");
@@ -228,10 +142,6 @@ static int get_app_attributes(ezxml_t app_attribute, appconfig_t * app_info)
 	/*Interpret value*/
 	if (strncmp((const char *)tmp->txt, "CSV", 3) == 0) {
 		app_info->output_format = CSV_OUTPUT;
-	} else if (strncmp((const char *)tmp->txt, "BINARY", 6) == 0) {
-		app_info->output_format = BINARY_OUTPUT;
-	} else if (strncmp((const char *)tmp->txt, "MMAP", 4) == 0) {
-		app_info->output_format = MMAP_OUTPUT;
 	} else if (strncmp((const char *)tmp->txt, "SHM", 3) == 0) {
 		app_info->output_format = SHM_OUTPUT;
 	} else {

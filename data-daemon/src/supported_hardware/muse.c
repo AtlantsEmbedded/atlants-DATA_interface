@@ -25,7 +25,7 @@
 #include "muse_pack_parser.h"
 #include "data_output.h"
 
-static int seconds = 0;
+#define KEEP_TIME 9
 
 /**
  * muse_init_hardware()
@@ -53,8 +53,6 @@ int muse_cleanup(void *param __attribute__ ((unused)))
  */
 int muse_init_hardware(void *param __attribute__ ((unused)))
 {
-	seconds = get_appconfig()->keep_time;
-
 	return (0);
 }
 
@@ -65,7 +63,6 @@ int muse_init_hardware(void *param __attribute__ ((unused)))
 int muse_translate_pkt(void *packet, void* output)
 {
 	int i,j;
-	int delta_offset;
 	muse_translt_pkt_t *muse_trslt_pkt_ptr = (muse_translt_pkt_t *) packet;
 
 	output_interface_array_t *output_intrface_array = (output_interface_array_t *) output;
@@ -136,7 +133,7 @@ int muse_send_keep_alive_pkt(void *param __attribute__ ((unused)))
 
 	do {
 		status = send(get_socket_fd(), msg, 3, 0);
-		sleep(seconds);
+		sleep(KEEP_TIME);
 	} while (status >= 0);
 
 	return (0);
@@ -184,8 +181,6 @@ int muse_process_pkt(void *packet, void *output)
 	
 	// Uncompressed or raw at this point
 	param_t *packet_ptr = (param_t *)packet;
-	
-	int nb_bits = 0;
 	
 	if (packet_ptr->len >= 6) {
 		

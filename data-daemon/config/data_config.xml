@@ -2,22 +2,14 @@
 <appConfig>
   <appAttributes>
     <debug>TRUE</debug>
-    <interface>BLE</interface>
-    <device>MUSE</device>
-    <compression>TRUE</compression>
-    <keep_alive>TRUE</keep_alive>keep_alive>
-    <keep_time>9</keep_time>
+    <device>FAKE_MUSE</device>
+    <keep_alive>TRUE</keep_alive>
+    <nb_data_channels>4</nb_data_channels>
     <remote_addr>00:06:66:78:99:48</remote_addr>
-    <process_data>FALSE</process_data>
-    <buffer>TRUE</buffer>
-	<shm_key>5678</shm_key>
-	<sem_key>1234</sem_key>
-	<nb_data_channels>4</nb_data_channels>
+    <output_format>SHM</output_format>
+    <shm_key>5678</shm_key>
+    <sem_key>1234</sem_key>
     <window_size>110</window_size>
     <nb_pages>2</nb_pages>
-    <samples>0</samples>
-    <number_runs>0</number_runs>
-    <conn_attempts>3</conn_attempts>
-    <output_format>CSV</output_format>
   </appAttributes>
  </appConfig>

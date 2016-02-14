@@ -156,7 +156,7 @@ inline int get_packet_type(unsigned char first_byte)
  * @param first_byte, first byte of the packet
  * @return binary value of the flag
  */ 
-inline int get_flag_value(unsigned char first_byte)
+int get_flag_value(unsigned char first_byte)
 {
 	return (first_byte&0x08)>0;
 }

@@ -40,7 +40,7 @@ int parse_compressed_packet(unsigned char* packet_header, int* deltas);
 
 void parse_uncompressed_packet(unsigned char* values_header, int* values);
 
-inline int get_flag_value(unsigned char first_byte);
+int get_flag_value(unsigned char first_byte);
 
 
 
