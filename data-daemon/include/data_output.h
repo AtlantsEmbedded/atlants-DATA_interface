@@ -24,20 +24,20 @@ initfunctionPtr_t _INIT_DATA_OUTPUT_FC;
 inputfunctionPtr_t _COPY_DATA_IN;
 functionPtr_t _TERMINATE_DATA_OUTPUT_FC;
 
-/*defines the data structure that contains the data to be sent*/
-typedef struct data_s {
-	float *ptr;
-	int nb_data;
-} data_t;
+//~ /*defines the data structure that contains the data to be sent*/
+//~ typedef struct data_s {
+	//~ float *ptr;
+	//~ int nb_data;
+//~ } data_t;
 
 
-/*Structure containing the configuration of the hardware*/
-typedef struct csv_options_s {
+//~ /*Structure containing the configuration of the hardware*/
+//~ typedef struct csv_options_s {
 	
-	char* filename;	
-	int nb_data_channels;
+	//~ char* filename;	
+	//~ int nb_data_channels;
 
-} csv_options_t;
+//~ } csv_options_t;
 
 
 /*Structure containing the configuration of the hardware*/

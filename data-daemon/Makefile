@@ -71,7 +71,6 @@ SOURCES       = src/main.c \
 		src/app_signal.c \
 		src/ipc_status_comm.o \
 		src/supported_hardware/muse_pack_parser.c \
-		src/supported_data_output/csv_file.c \
 		src/supported_data_output/shm_wrt_buf.c \
 		src/supported_hardware/muse.c \
 		src/supported_hardware/fake_muse.c \
@@ -86,7 +85,6 @@ OBJECTS       = src/main.o \
 		src/app_signal.o \
 		src/ipc_status_comm.o \
 		src/supported_hardware/muse_pack_parser.o \
-		src/supported_data_output/csv_file.o \
 		src/supported_data_output/shm_wrt_buf.o \
 		src/supported_hardware/muse.o \
 		src/supported_hardware/fake_muse.o \
@@ -158,9 +156,6 @@ ipc_status_comm.o: src/ipc_status_comm.c
 	
 muse_pack_parser.o: src/supported_hardware/muse_pack_parser.c
 	$(CC) -c $(CFLAGS) $(INCPATH) -o muse.o src/supported_hardware/muse_pack_parser.c
-	
-csv_file.o: src/supported_data_output/csv_file.c
-	$(CC) -c $(CFLAGS) $(INCPATH) -o csv_file.o src/supported_data_output/csv_file.c
 	
 shm_wrt_buf.o: src/supported_data_output/shm_wrt_buf.c
 	$(CC) -c $(CFLAGS) $(INCPATH) -o shm_wrt_buf.o src/supported_data_output/shm_wrt_buf.c
