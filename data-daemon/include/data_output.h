@@ -7,6 +7,8 @@
  *        to user options.
  */
 
+#include <csv_file.h>
+
 #define INIT_DATA_OUTPUT_FC(param) \
 		_INIT_DATA_OUTPUT_FC(param)
 		
