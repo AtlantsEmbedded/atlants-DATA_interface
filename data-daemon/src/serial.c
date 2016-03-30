@@ -50,10 +50,18 @@ void set_serial_fd(int fd)
 int setup_serial(unsigned char dev_name[])
 {
 	int fd, rc;
+	char* dev_name_debug = "/dev/ttyUSB0";
 
-	fd = open((const char *)dev_name, O_RDWR | O_NOCTTY | O_NONBLOCK);
+
+	//fd = open((const char *)dev_name, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	fd = open((const char *)dev_name_debug, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	
 	if (fd == -1) {
-		printf("open_port: Unable to open %s - ", dev_name);
+		printf("open_port: Unable to open %s - ", dev_name_debug);
+		
+		printf("Oh dear, something went wrong with read()! %s\n", strerror(errno));
+		
+		
 		return (-1);
 	} 
 	set_serial_fd(fd);
