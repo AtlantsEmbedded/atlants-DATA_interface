@@ -137,12 +137,6 @@ int openbci_process_pkt(void *packet, void* output)
 	data_t data_struct;
 	data_struct.nb_data = NB_EEG_CHANNELS + NB_ACCEL_CHANNELS;
 	data_struct.ptr = data;
-		
-	if(packet_ptr->ptr[1]==0xff){
-		fprintf(stdout, "Bytes read = %d\n", packet_ptr->len);
-		hexdump((unsigned char *)packet_ptr->ptr, packet_ptr->len);
-	}
-	
 	
 	if (_TRANS_PKT_FC) {
 		

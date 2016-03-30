@@ -78,10 +78,14 @@ int setup_serial(unsigned char dev_name[])
     toptions.c_cflag &= ~CRTSCTS;
 
     toptions.c_cflag |= CREAD | CLOCAL;  // turn on READ & ignore ctrl lines
-    toptions.c_iflag &= ~(IXON | IXOFF | IXANY); // turn off s/w flow ctrl
+    toptions.c_iflag &= ~(PARMRK | IXON | IXOFF | IXANY); // turn off s/w flow ctrl
+    //toptions.c_iflag |= ISTRIP; // set istrip to remove 0xff duplication
 
     toptions.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); // make raw
     toptions.c_oflag &= ~OPOST; // make raw
+
+
+//ignbrk, brkint, ignpar, parmrk, inpck, istrip, inlcr, igncr, icrnl,
 
     toptions.c_cc[VMIN]  = 0;
     toptions.c_cc[VTIME] = 0;
