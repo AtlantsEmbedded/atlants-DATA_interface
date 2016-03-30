@@ -128,8 +128,6 @@ int openbci_send_pkt(void *param)
 int openbci_process_pkt(void *packet, void* output)
 {
 	int i;
-	int eeg_idx = 2;
-	static char show_nxt = 0;
 	param_t *packet_ptr = (param_t *) packet;
 	output_interface_array_t *output_intrface_array = (output_interface_array_t *) output;
 	
@@ -137,25 +135,14 @@ int openbci_process_pkt(void *packet, void* output)
 	static float data[NB_EEG_CHANNELS + NB_ACCEL_CHANNELS];	
 	
 	data_t data_struct;
-	//data_struct.nb_data = NB_EEG_CHANNELS + NB_ACCEL_CHANNELS;
 	data_struct.nb_data = NB_EEG_CHANNELS + NB_ACCEL_CHANNELS;
 	data_struct.ptr = data;
-	
-	fprintf(stdout, "Bytes read = %d\n", packet_ptr->len);
-	hexdump((unsigned char *)packet_ptr->ptr, packet_ptr->len);
 		
-		/*
-	if(show_nxt){
+	if(packet_ptr->ptr[1]==0xff){
 		fprintf(stdout, "Bytes read = %d\n", packet_ptr->len);
 		hexdump((unsigned char *)packet_ptr->ptr, packet_ptr->len);
-		show_nxt = 0;
-	}else if(packet_ptr->ptr[1]==0xaf){
-		fprintf(stdout, "Bytes read = %d\n", packet_ptr->len);
-		hexdump((unsigned char *)packet_ptr->ptr, packet_ptr->len);
-		show_nxt = 1;
-		return (0);
 	}
-	*/
+	
 	
 	if (_TRANS_PKT_FC) {
 		
@@ -166,11 +153,9 @@ int openbci_process_pkt(void *packet, void* output)
 			case STANDARD_HEADER:
 				
 				packet_nb = packet_ptr->ptr[1];
-				printf("packet number:%d\n",packet_nb);
-				fflush(stdout);
 				
 				/*depacket eeg-acc data*/
-				parse_openbci_packet(&(packet_ptr->ptr[eeg_idx]), &(data[0]), &(data[8]));
+				parse_openbci_packet(packet_ptr->ptr, &(data[0]), &(data[8]));
 				/*not need to translate*/
 				for(i=0;i<output_intrface_array->nb_output;i++){
 					COPY_DATA_IN(output_intrface_array->output_interface[i], &data_struct);
@@ -253,6 +238,11 @@ int openbci_read_pkt(void* output)
 	bytes_expected = DATA_PACKET_LENGTH;
 	do {
 		
+		header_found = 0x00;
+		this_byte = 0x00;
+		prev_byte = 0x00;
+		
+		/*wait to find the header*/
 		while(!header_found){
 			prev_byte = this_byte;
 			if(read(fd, &this_byte, 1)){			
@@ -263,39 +253,20 @@ int openbci_read_pkt(void* output)
 			
 		}
 		
+		/*move on with the rest of the packet*/
 		buf[0] = prev_byte;
 		buf[1] = this_byte;
 		offset = 2;
-		this_byte = 0x00;
-		prev_byte = 0x00;
-		unsigned char take_next = 0;
 		
 		do {
-			if(read(fd, &this_byte, 1)){
-				
-				if(this_byte==0xFF && take_next==0){
-					take_next = 1;
-				}else{
-					buf[offset]=this_byte;
-					offset+=1;
-					take_next = 0;
-				}
-				
-			}
-		} while ((this_byte!=0xc0 && offset < 255) || offset < 20);
-
-
-		if (bytes_read < 0) {
-			fprintf(stdout, "Error reading socket: %d\n", bytes_read);
-			continue;
-		}
+			offset += read(fd, buf + offset, 1);
+		} while (offset<bytes_expected);
 
 		param_process_pkt.ptr = buf;
 		param_process_pkt.len = offset;
 
 		PROCESS_PKT_FC(&param_process_pkt,output);
 
-		header_found = 0x00;
 		next_packet++;
 
 	} while(1);
@@ -327,6 +298,7 @@ char parse_openbci_packet(unsigned char* packet, float eeg_data[NB_EEG_CHANNELS]
 	 * Bytes 21-23: Data value for EEG channel 6
 	 * Bytes 24-26: Data value for EEG channel 8
 	 */	
+	idx = EEG_CHAN_START_IDX;
 	for(i=0;i<NB_EEG_CHANNELS;i++){
 			
 		eeg_data[i] = (float)interpret24bitAsInt32(&(packet[idx]))*DEFAULT_EEG_SCALE;
@@ -338,14 +310,15 @@ char parse_openbci_packet(unsigned char* packet, float eeg_data[NB_EEG_CHANNELS]
 	 * Bytes 29-30: Data value for accelerometer channel Y
 	 * Bytes 31-32: Data value for accelerometer channel Z
 	 */
-	//idx = ACCEL_CHAN_START_IDX;
+	idx = ACCEL_CHAN_START_IDX;
 	for(i=0;i<NB_ACCEL_CHANNELS;i++){
 		
 		if(!(packet[idx] == 0 && packet[idx+1] == 0)){
-			//acc_data[i] = (float)interpret16bitAsInt32(&(packet[idx]))*DEFAULT_ACCEL_SCALE;
-			acc_data[i] = 0;
+			acc_data[i] = (float)interpret16bitAsInt32(&(packet[idx]))*DEFAULT_ACCEL_SCALE;
+			
+			fflush(stdout);
 		}
-		//idx += ACCEL_CHAN_INCREMENT;
+		idx += ACCEL_CHAN_INCREMENT;
 	}
 		
 	return EXIT_SUCCESS;
