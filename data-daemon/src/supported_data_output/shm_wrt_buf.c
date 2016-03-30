@@ -119,7 +119,8 @@ int shm_wrt_write_in_buf(void *param, void* input){
 	if(shm_wrt->page_opened){
 		
 		/*compute the write location*/
-		write_ptr = shm_wrt->shm_options.page_size*shm_wrt->current_page+shm_wrt->shm_options.nb_data_channels*shm_wrt->samples_count;
+		write_ptr = shm_wrt->shm_options.page_size*shm_wrt->current_page+
+		            shm_wrt->shm_options.nb_data_channels*sizeof(float)*shm_wrt->samples_count;
 		
 		/*write data*/
 		memcpy((void*)&(shm_wrt->shm_buf[write_ptr]),(void*)data->ptr, data->nb_data*sizeof(float));

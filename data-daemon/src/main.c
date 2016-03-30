@@ -68,7 +68,6 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
 	param_t param_ptr = { 0 };
 	pthread_t readT, writeT;
 	int iret1 __attribute__ ((unused)), iret2 __attribute__ ((unused)), ret = 0, attempts = 0;
-	shm_mem_options_t shm_mem_options;
 
 	/*Set up ctrl c signal handler*/
 	(void)signal(SIGINT, ctrl_c_handler);
@@ -90,26 +89,8 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
 		return (-1);
 	}
 
-	/*Copy info from xml to dataoutput options structure*/
-	shm_mem_options.shm_key = config->shm_key;
-	shm_mem_options.sem_key = config->sem_key;
-	shm_mem_options.nb_data_channels = config->nb_data_channels*sizeof(float); /*adjusted for data type (patch)*/
-	shm_mem_options.window_size = config->window_size;
-	shm_mem_options.nb_pages = config->nb_pages;
-	shm_mem_options.page_size = shm_mem_options.window_size*shm_mem_options.nb_data_channels;
-	shm_mem_options.buffer_size = shm_mem_options.page_size*shm_mem_options.nb_pages;
-
-#if DEBUG
-	printf("shm_key: %i\n",shm_mem_options.shm_key);
-	printf("sem_key: %i\n",shm_mem_options.sem_key);
-	printf("nb_data_channels: %i\n",shm_mem_options.nb_data_channels);
-	printf("window_size: %i\n",shm_mem_options.window_size);
-	printf("buffer_size: %i\n",shm_mem_options.buffer_size);
-#endif
-
-	
 	/*init the data output*/
-	dataout_interface = init_data_output((char)config->output_format,(void*)&shm_mem_options);
+	dataout_interface = init_data_output(config);
 	if (dataout_interface==NULL){
 		printf("Error initializing data output");
 		return (-1);

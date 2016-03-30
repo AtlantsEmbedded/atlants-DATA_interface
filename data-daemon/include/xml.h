@@ -1,3 +1,6 @@
+#ifndef XML_H
+#define XML_H
+
 /**
  * @file xml.h
  * @author Ron Brash (ron.brash@gmail.com), Frederic Simard (frederic.simard.1@outlook.com) | Atlants Embedded 2015
@@ -41,3 +44,6 @@ typedef struct appconfig_s {
 appconfig_t *xml_initialize(char *filename);
 appconfig_t *get_appconfig();
 void set_appconfig(appconfig_t *config_obj);
+
+
+#endif
