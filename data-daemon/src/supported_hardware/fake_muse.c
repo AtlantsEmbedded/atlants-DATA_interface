@@ -182,7 +182,7 @@ int fake_muse_read_pkt(void *output)
     struct timespec interpacket_time;
     
     interpacket_time.tv_sec = 0;
-    interpacket_time.tv_nsec = 10000000; /*sleep for 10 milliseconds*/
+    interpacket_time.tv_nsec = 4000000; /*sleep for 10 milliseconds*/
 	
 	do {
 
