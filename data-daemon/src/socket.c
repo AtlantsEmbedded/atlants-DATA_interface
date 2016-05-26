@@ -49,8 +49,6 @@ int setup_socket(unsigned char addr_mac[]) {
 
 	fd = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
 	
-	
-	
 	addr.rc_family = AF_BLUETOOTH;
 	addr.rc_channel = addr_mac[15]%2+1;
 	str2ba((char *)addr_mac, &addr.rc_bdaddr);
@@ -62,7 +60,7 @@ int setup_socket(unsigned char addr_mac[]) {
 	if (bind(fd, (struct sockaddr *) &laddr, sizeof(laddr)) < 0) {
 		perror("Can't bind RFCOMM socket");
 		close(fd);
-		return;
+		return -1;
 	}
 	
 	status = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
