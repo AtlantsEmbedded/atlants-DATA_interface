@@ -2,7 +2,7 @@
 <appConfig>
   <appAttributes>
     <debug>TRUE</debug>
-    <device>FAKE_MUSE</device>
+    <device>MUSE</device>
     <keep_alive>TRUE</keep_alive>
     <nb_data_channels>4</nb_data_channels>
     <remote_addr>00:06:66:78:99:48</remote_addr>
