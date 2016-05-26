@@ -254,6 +254,12 @@ int muse_read_pkt(void *output)
 			fprintf(stdout, "Error reading socket: %d\n", bytes_read);
 			
 			switch(tmp){
+				
+				case EAGAIN:
+				case EWOULDBLOCK:
+					fprintf(stdout, "EAGAIN\n");
+				 	break;
+				
 				case EBADF:
 					fprintf(stdout, "EBADF\n");
 					break;
@@ -280,6 +286,11 @@ int muse_read_pkt(void *output)
 					
 				case ENOTSOCK:
 					fprintf(stdout, "ENOTSOCK\n");
+					break;
+					
+					
+				default:
+					fprintf(stdout, "something else!\n");
 					break;
 					
 			}
