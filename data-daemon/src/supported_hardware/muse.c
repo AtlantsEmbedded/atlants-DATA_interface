@@ -287,8 +287,12 @@ int muse_read_pkt(void *output)
 					fprintf(stdout, "ENOTSOCK\n");
 					break;
 					
+				case ENOMEM:
+					fprintf(stdout, "ENOMEM\n");
+					break;
+					
 				default:
-					fprintf(stdout, "something else!\n");
+					fprintf(stdout, "something else! %d\n",tmp);
 					break;
 					
 			}
