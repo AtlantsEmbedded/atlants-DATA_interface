@@ -12,6 +12,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/socket.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/rfcomm.h>
@@ -249,7 +250,41 @@ int muse_read_pkt(void *output)
 		bytes_read = recv(get_socket_fd(), buf, BUFSIZE, 0);
 
 		if (bytes_read <= 0) {
+			int tmp = errno;
 			fprintf(stdout, "Error reading socket: %d\n", bytes_read);
+			
+			switch(tmp){
+				case EBADF:
+					fprintf(stdout, "EBADF\n");
+					break;
+					
+				case ECONNREFUSED:
+					fprintf(stdout, "ECONNREFUSED\n");
+					break;
+				
+				case EFAULT:
+					fprintf(stdout, "EFAULT\n");
+					break;
+					
+				case EINTR:
+					fprintf(stdout, "EINTR\n");
+					break;
+					
+				case EINVAL:
+					fprintf(stdout, "EINVAL\n");
+					break;
+					
+				case ENOTCONN:
+					fprintf(stdout, "ENOTCONN\n");
+					break;
+					
+				case ENOTSOCK:
+					fprintf(stdout, "ENOTSOCK\n");
+					break;
+					
+			}
+			
+			
 			continue;
 		}
 
