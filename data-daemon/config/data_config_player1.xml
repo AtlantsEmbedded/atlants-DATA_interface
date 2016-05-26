@@ -5,7 +5,7 @@
     <device>FAKE_MUSE</device>
     <keep_alive>TRUE</keep_alive>
     <nb_data_channels>4</nb_data_channels>
-    <remote_addr>00:06:66:78:99:48</remote_addr>
+    <remote_addr>00:06:66:78:94:4A</remote_addr>
     <output_format>SHM</output_format>
     <shm_key>5678</shm_key>
     <sem_key>1234</sem_key>
