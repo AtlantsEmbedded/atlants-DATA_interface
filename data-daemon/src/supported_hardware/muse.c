@@ -251,8 +251,8 @@ int muse_read_pkt(void *output)
 
 		if (bytes_read <= 0) {
 			int tmp = errno;
-			fprintf(stdout, "Error reading socket: %d\n", bytes_read);
-			
+			//fprintf(stdout, "Error reading socket: %d\n", bytes_read);
+			/*
 			switch(tmp){
 				
 				case EWOULDBLOCK:
@@ -296,7 +296,7 @@ int muse_read_pkt(void *output)
 					break;
 					
 			}
-			
+			*/
 			
 			continue;
 		}
