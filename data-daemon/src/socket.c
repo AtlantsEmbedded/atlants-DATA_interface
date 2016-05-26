@@ -47,7 +47,7 @@ int setup_socket(unsigned char addr_mac[]) {
 
 	fd = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
 	addr.rc_family = AF_BLUETOOTH;
-	addr.rc_channel = addr_mac[15]%5;
+	addr.rc_channel = addr_mac[15]%5+1;
 	str2ba((char *)addr_mac, &addr.rc_bdaddr);
 	set_socket_fd(fd);
 
