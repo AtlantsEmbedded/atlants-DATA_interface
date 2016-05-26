@@ -256,8 +256,10 @@ int muse_read_pkt(void *output)
 			switch(tmp){
 				
 				case EAGAIN:
-				case EWOULDBLOCK:
 					fprintf(stdout, "EAGAIN\n");
+				 	break;
+				case EWOULDBLOCK:
+					fprintf(stdout, "EWOULDBLOCK\n");
 				 	break;
 				
 				case EBADF:
@@ -287,7 +289,6 @@ int muse_read_pkt(void *output)
 				case ENOTSOCK:
 					fprintf(stdout, "ENOTSOCK\n");
 					break;
-					
 					
 				default:
 					fprintf(stdout, "something else!\n");
