@@ -42,26 +42,27 @@ void set_socket_fd(int fd) {
 int setup_socket(unsigned char addr_mac[]) {
 
 	struct sockaddr_rc addr = { 0 };
-	struct sockaddr_rc laddr = { 0 };
+	//struct sockaddr_rc laddr = { 0 };
 	int status;
 	int fd = 0;
-	char* my_addr = "5C:F3:70:74:9A:01";
+	//char* my_addr = "5C:F3:70:74:9A:01";
 
 	fd = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
 	
 	addr.rc_family = AF_BLUETOOTH;
-	addr.rc_channel = addr_mac[15]%2+1;
+	//addr.rc_channel = addr_mac[15]%2+1;
+	addr.rc_channel = 1;
 	str2ba((char *)addr_mac, &addr.rc_bdaddr);
 	
-	laddr.rc_family = AF_BLUETOOTH;
-	laddr.rc_channel = addr_mac[15]%2+1;
-	str2ba((char *)my_addr, &laddr.rc_bdaddr);
+	//laddr.rc_family = AF_BLUETOOTH;
+	//laddr.rc_channel = addr_mac[15]%2+1;
+	//str2ba((char *)my_addr, &laddr.rc_bdaddr);
 	
-	if (bind(fd, (struct sockaddr *) &laddr, sizeof(laddr)) < 0) {
-		perror("Can't bind RFCOMM socket");
-		close(fd);
-		return -1;
-	}
+	//if (bind(fd, (struct sockaddr *) &laddr, sizeof(laddr)) < 0) {
+	//	perror("Can't bind RFCOMM socket");
+	//		close(fd);
+	//	return -1;
+	//}
 	
 	status = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
 	
