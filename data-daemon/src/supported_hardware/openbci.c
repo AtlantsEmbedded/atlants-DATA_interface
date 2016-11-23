@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <signal.h>
+#include <math.h>
 #include <pthread.h>
 #include <string.h>
 #include <unistd.h>
@@ -40,16 +41,16 @@
 #define DEFAULT_EEG_SCALE 4.5/24/(pow(2,23) - 1)
 #define DEFAULT_ACCEL_SCALE 0.002/pow(2,4)
 #define NB_EEG_CHANNELS 8
-#define NB_ACCEL_CHANNELS 3
+//#define NB_ACCEL_CHANNELS 3
 
 #define EEG_CHAN_START_IDX 2
 #define EEG_CHAN_INCREMENT 3
 
-#define ACCEL_CHAN_START_IDX 26
-#define ACCEL_CHAN_INCREMENT 2
+//#define ACCEL_CHAN_START_IDX 26
+//#define ACCEL_CHAN_INCREMENT 2
 
 
-char parse_openbci_packet(unsigned char* packet, float eeg_data[NB_EEG_CHANNELS], float acc_data[NB_ACCEL_CHANNELS]);
+char parse_openbci_packet(unsigned char* packet, float eeg_data[NB_EEG_CHANNELS]);//, float acc_data[NB_ACCEL_CHANNELS]);
 int interpret16bitAsInt32(char byteArray[2]);
 int interpret24bitAsInt32(char byteArray[3]);
 
@@ -132,10 +133,10 @@ int openbci_process_pkt(void *packet, void* output)
 	output_interface_array_t *output_intrface_array = (output_interface_array_t *) output;
 	
 	static unsigned char packet_nb; 
-	static float data[NB_EEG_CHANNELS + NB_ACCEL_CHANNELS];	
+	static float data[NB_EEG_CHANNELS];	
 	
 	data_t data_struct;
-	data_struct.nb_data = NB_EEG_CHANNELS + NB_ACCEL_CHANNELS;
+	data_struct.nb_data = NB_EEG_CHANNELS;
 	data_struct.ptr = data;
 	
 	if (_TRANS_PKT_FC) {
@@ -149,7 +150,7 @@ int openbci_process_pkt(void *packet, void* output)
 				packet_nb = packet_ptr->ptr[1];
 				
 				/*depacket eeg-acc data*/
-				parse_openbci_packet(packet_ptr->ptr, &(data[0]), &(data[8]));
+				parse_openbci_packet(packet_ptr->ptr, &(data[0]));//, &(data[8]));
 				/*not need to translate*/
 				for(i=0;i<output_intrface_array->nb_output;i++){
 					COPY_DATA_IN(output_intrface_array->output_interface[i], &data_struct);
@@ -173,8 +174,6 @@ int openbci_process_pkt(void *packet, void* output)
 int openbci_read_pkt(void* output)
 {
 
-	int bytes_read = 0;
-
 	param_t param_start_transmission = { OPENBCI_START_TRANSMISSION, 1 };
 	param_t param_stop_transmission = { OPENBCI_HALT_TRANSMISSION, 1 };
 	param_t param_reset_transmission = { OPENBCI_RESET, 1 };
@@ -193,6 +192,7 @@ int openbci_read_pkt(void* output)
 	openbci_send_pkt(&param_stop_transmission);
 	openbci_send_pkt(&param_reset_transmission);
 	sleep(2);
+    
 	// If you care about the $$$ prompt
 	do {
 		num = read(fd, buf + offset, 255);
@@ -277,7 +277,7 @@ int openbci_read_pkt(void* output)
  * @param acc_data (out), accelerometer data samples
  * @return EXIT_SUCCESS 
  */
-char parse_openbci_packet(unsigned char* packet, float eeg_data[NB_EEG_CHANNELS], float acc_data[NB_ACCEL_CHANNELS]){
+char parse_openbci_packet(unsigned char* packet, float eeg_data[NB_EEG_CHANNELS]){ //, float acc_data[NB_ACCEL_CHANNELS]){
 	
 	int i;
 	int idx = 0;
@@ -304,6 +304,7 @@ char parse_openbci_packet(unsigned char* packet, float eeg_data[NB_EEG_CHANNELS]
 	 * Bytes 29-30: Data value for accelerometer channel Y
 	 * Bytes 31-32: Data value for accelerometer channel Z
 	 */
+    /*
 	idx = ACCEL_CHAN_START_IDX;
 	for(i=0;i<NB_ACCEL_CHANNELS;i++){
 		
@@ -313,7 +314,7 @@ char parse_openbci_packet(unsigned char* packet, float eeg_data[NB_EEG_CHANNELS]
 			fflush(stdout);
 		}
 		idx += ACCEL_CHAN_INCREMENT;
-	}
+	}*/
 		
 	return EXIT_SUCCESS;
 }
